@@ -3,6 +3,7 @@
 import sys
 import os
 import subprocess
+import re
 
 
 def timecode_to_milliseconds(code):
@@ -98,6 +99,12 @@ def parse_vtt_file(path, padding=0):
                 end = timecode_to_milliseconds(times[1].strip()) + padding
                 length = end - start
                 text = f.readline().strip()
+
+                # Process text to get rid of unnecessary tags.
+                text = re.sub("</?ruby>", "", text)
+                text = re.sub("<rp>.*?</rp>", "", text)
+                text = re.sub("<rt>.*?</rt>", "", text)
+
                 if (start not in start_times) and (text != ""):
                     start_times |= set([start])
                     subtitles += [(
@@ -119,6 +126,8 @@ if __name__ == "__main__":
         subtitles = parse_ass_file(subs_filename, 300)
     elif subs_filename.endswith(".vtt") or subs_filename.endswith(".srt"):
         subtitles = parse_vtt_file(subs_filename, 300)
+    else:
+        print("Unknown subtitle format.  Supported formats are SSA, ASS, VTT, and SRT.")
 
     # Create the directory for the new files if it doesn't already exist.
     try:
