@@ -28,14 +28,6 @@ def milliseconds_to_timecode(milliseconds):
     return "{}:{:02}:{:02}.{:02}".format(hours, minutes, seconds, milliseconds // 10)
 
 
-def parse_ass_dialogue_line(line):
-    """ Parses a dialogue line from a .ass subtitles files, returning
-        the start/end times and the dialogue text as a tuple.
-    """
-    assert(line.strip().startswith("Dialogue:"))
-    elements = line.split(',')
-    return (elements[1].strip(), elements[2].strip(), elements[-1].strip())
-
 def parse_ass_file(path, padding=0):
     """ Parses an entire .ass file, extracting the dialogue.
 
@@ -43,21 +35,41 @@ def parse_ass_file(path, padding=0):
         subtitle found in the file.  A padding of "padding" milliseconds is
         added to the start/end times.
     """
-    start_times = set() # Used to prevent duplicates
     subtitles = []
     with open(path) as f:
+        # First find out the field order of the dialogue.
+        found_start = False
+        fields = {}
+        for line in f:
+            if not found_start:
+                found_start = line.strip() == "[Events]"
+            elif line.strip().startswith("Format:"):
+                line = line[7:].strip()
+                tmp = line.split(",")
+                for i in range(len(tmp)):
+                    fields[tmp[i].strip().lower()] = i
+                break
+        if ("start" not in fields) or ("end" not in fields) or ("text" not in fields):
+            raise Exception("'Start', 'End', or 'Text' field not found.")
+
+        # Then parse the dialogue lines.
+        start_times = set() # Used to prevent duplicates
         for line in f:
             if line.strip().startswith("Dialogue:"):
-                sub = parse_ass_dialogue_line(line)
-                if (sub[0] not in start_times) and (sub[2] != ""):
-                    start_times |= set(sub[0])
-                    start = max(timecode_to_milliseconds(sub[0]) - padding, 0)
-                    end = timecode_to_milliseconds(sub[1]) + padding
+                elements = line[9:].strip().split(',', len(fields) - 1)
+                start_element = elements[fields["start"]].strip()
+                end_element = elements[fields["end"]].strip()
+                text_element = elements[-1].strip()
+
+                if (start_element not in start_times) and (text_element != ""):
+                    start_times |= set(start_element)
+                    start = max(timecode_to_milliseconds(start_element) - padding, 0)
+                    end = timecode_to_milliseconds(end_element) + padding
                     length = end - start
                     subtitles += [(
                         milliseconds_to_timecode(start),
                         milliseconds_to_timecode(length),
-                        sub[2],
+                        text_element,
                     )]
     subtitles.sort()
     return subtitles
