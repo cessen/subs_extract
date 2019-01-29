@@ -8,11 +8,17 @@ import subprocess
 def timecode_to_milliseconds(code):
     """ Takes a time code and converts it into an integer of milliseconds.
     """
-    elements = code.split(":")
-    assert(len(elements) == 3)
-    milliseconds = int(elements[0]) * 3600000
-    milliseconds += int(elements[1]) * 60000
-    milliseconds += int(float(elements[2]) * 1000)
+    elements = code.replace(",", ".").split(":")
+    assert(len(elements) < 4)
+    
+    milliseconds = 0
+    if len(elements) >= 1:
+        milliseconds += int(float(elements[-1]) * 1000)
+    if len(elements) >= 2:
+        milliseconds += int(elements[-2]) * 60000
+    if len(elements) >= 3:
+        milliseconds += int(elements[-3]) * 3600000
+    
     return milliseconds
 
 
@@ -75,6 +81,33 @@ def parse_ass_file(path, padding=0):
     return subtitles
 
 
+def parse_vtt_file(path, padding=0):
+    """ Parses an entire WebVTT/SRT file, extracting the dialogue.
+
+        Returns a list of (start, length, dialogue) tuples, one for each
+        subtitle found in the file.  A padding of "padding" milliseconds is
+        added to the start/end times.
+    """
+    subtitles = []
+    with open(path) as f:
+        start_times = set() # Used to prevent duplicates
+        for line in f:
+            if "-->" in line:
+                times = line.split("-->")
+                start = max(timecode_to_milliseconds(times[0].strip()) - padding, 0)
+                end = timecode_to_milliseconds(times[1].strip()) + padding
+                length = end - start
+                text = f.readline().strip()
+                if (start not in start_times) and (text != ""):
+                    start_times |= set([start])
+                    subtitles += [(
+                        milliseconds_to_timecode(start),
+                        milliseconds_to_timecode(length),
+                        text,
+                    )]
+    return subtitles
+
+
 if __name__ == "__main__":
     subs_filename = sys.argv[1]
     video_filename = sys.argv[2]
@@ -82,7 +115,10 @@ if __name__ == "__main__":
     base_name = os.path.basename(dir_name)
 
     # Parse the subtitles file
-    subtitles = parse_ass_file(subs_filename, 300)
+    if subs_filename.endswith(".ass") or subs_filename.endswith(".ssa"):
+        subtitles = parse_ass_file(subs_filename, 300)
+    elif subs_filename.endswith(".vtt") or subs_filename.endswith(".srt"):
+        subtitles = parse_vtt_file(subs_filename, 300)
 
     # Create the directory for the new files if it doesn't already exist.
     try:
