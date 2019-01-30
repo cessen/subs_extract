@@ -94,17 +94,26 @@ def parse_vtt_file(path, padding=0):
         start_times = set() # Used to prevent duplicates
         for line in f:
             if "-->" in line:
+                # Get the timing.
                 times = line.split("-->")
                 start = max(timecode_to_milliseconds(times[0].strip()) - padding, 0)
                 end = timecode_to_milliseconds(times[1].strip()) + padding
                 length = end - start
-                text = f.readline().strip()
+
+                # Get the text.
+                text = ""
+                next_line = f.readline()
+                while next_line.strip() != "":
+                    text += next_line
+                    next_line = f.readline()
+                text = text.strip()
 
                 # Process text to get rid of unnecessary tags.
                 text = re.sub("</?ruby>", "", text)
                 text = re.sub("<rp>.*?</rp>", "", text)
                 text = re.sub("<rt>.*?</rt>", "", text)
 
+                # Add to the subtitles list.
                 if (start not in start_times) and (text != ""):
                     start_times |= set([start])
                     subtitles += [(
