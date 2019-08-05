@@ -124,19 +124,55 @@ def parse_vtt_file(path, padding=0):
     return subtitles
 
 
+def parse_subtitle_file(filepath, padding=0):
+    """ Parses a subtitle file, attempting to automatically determine the
+        file format for parsing.
+    """
+    if filepath.endswith(".ass") or filepath.endswith(".ssa"):
+        return parse_ass_file(filepath, padding)
+    elif filepath.endswith(".vtt") or filepath.endswith(".srt"):
+        return parse_vtt_file(filepath, padding)
+    else:
+        raise "Unknown subtitle format.  Supported formats are SSA, ASS, VTT, and SRT."
+
+
+def find_closest_sub(subs_list, timecode, max_diff_milliseconds):
+    """ Finds the sub in the given list with the start time closest to timecode.
+
+        Will only return a matching sub if the start time difference is less
+        than max_diff_milliseconds.  Otherwise it will return None.
+    """
+    time_mil = timecode_to_milliseconds(timecode)
+
+    # This certainly isn't the most efficient way to do this, but it's
+    # dead-simple and does not appear to be a performance bottleneck at all.
+    closest_so_far = -1
+    closest_diff = max_diff_milliseconds
+    for i in range(len(subs_list)):
+        sub_start = timecode_to_milliseconds(subs_list[i][0])
+        diff = abs(time_mil - sub_start)
+        if diff < closest_diff:
+            closest_so_far = i
+            closest_diff = diff
+
+    if closest_so_far >= 0:
+        return subs_list[closest_so_far]
+    else:
+        return None
+
+
 if __name__ == "__main__":
     video_filename = sys.argv[1]
     subs_filename = sys.argv[2]
+    second_subs_filename = None
+    if len(sys.argv) >= 4:
+        second_subs_filename = sys.argv[3]
     dir_name = video_filename.rsplit(".")[0]
     base_name = os.path.basename(dir_name)
 
-    # Parse the subtitles file
-    if subs_filename.endswith(".ass") or subs_filename.endswith(".ssa"):
-        subtitles = parse_ass_file(subs_filename, 300)
-    elif subs_filename.endswith(".vtt") or subs_filename.endswith(".srt"):
-        subtitles = parse_vtt_file(subs_filename, 300)
-    else:
-        print("Unknown subtitle format.  Supported formats are SSA, ASS, VTT, and SRT.")
+    # Parse the subtitle files
+    subtitles = parse_subtitle_file(subs_filename, 300)
+    second_subs = parse_subtitle_file(second_subs_filename, 300) if second_subs_filename else None
 
     # Create the directory for the new files if it doesn't already exist.
     try:
@@ -148,8 +184,7 @@ if __name__ == "__main__":
 
     # Set up deck file
     deck_out_filepath = os.path.join(dir_name, "0_deck -- {}.txt".format(base_name))
-    if not os.path.isfile(deck_out_filepath):
-        deck_file = open(deck_out_filepath, 'w')
+    deck_file = open(deck_out_filepath, 'w')
 
     # Process the subtitles
     first_card = True
@@ -161,11 +196,21 @@ if __name__ == "__main__":
         # Generate base filename
         base_filename = os.path.join(dir_name, "{} -- {}".format(base_name, item[0].replace(":", "_").replace(".", "-")))
 
+        # Find matching alt sub if any.
+        if second_subs:
+            alt_sub = find_closest_sub(second_subs, item[0], 1000)
+            if alt_sub:
+                alt_sub = alt_sub[2]
+            else:
+                alt_sub = ""
+
         # Write text file of subtitle
         subtitle_out_filepath = base_filename + ".txt"
         if not os.path.isfile(subtitle_out_filepath):
             with open(subtitle_out_filepath, 'w') as f:
                 f.write(item[2])
+                if second_subs:
+                    f.write("\n\n" + alt_sub)
 
         # Extract audio of subtitle into mp3 file
         audio_out_filepath_1 = base_filename + ".wav"
@@ -213,6 +258,8 @@ if __name__ == "__main__":
             deck_file.write("[sound:{}]".format(os.path.basename(audio_out_filepath_2)) + "\t")
             deck_file.write(base_name + "\t")
             deck_file.write("{}".format(item[0].rsplit(".")[0]))
+            if second_subs:
+                deck_file.write(alt_sub.replace("\t", "    ").replace("\r\n", "</br>").replace("\n", "</br>") + "\t")
 
     deck_file.close()
 
