@@ -259,7 +259,7 @@ if __name__ == "__main__":
             deck_file.write(base_name + "\t")
             deck_file.write("{}".format(item[0].rsplit(".")[0]))
             if second_subs:
-                deck_file.write(alt_sub.replace("\t", "    ").replace("\r\n", "</br>").replace("\n", "</br>") + "\t")
+                deck_file.write("\t" + alt_sub.replace("\t", "    ").replace("\r\n", "</br>").replace("\n", "</br>"))
 
     deck_file.close()
 
