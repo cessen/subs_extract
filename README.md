@@ -8,7 +8,7 @@ It takes as input a video file and a corresponding .ssa, .ass, .vtt, or .srt sub
 subs_extract.py a_really_cool_show.mp4 a_really_cool_show.srt
 ```
 
-And it then creates a text file and mp3 file for each sentence in the subtitles, putting them in a new directory named after the subtitle file.  It also creates a deck file that can be imported to Anki, with the following fields per note:
+And it then creates a text file and mp3 file for each sentence in the subtitles, putting them in a new directory named after the video file.  It also creates a deck file that can be imported to Anki, with the following fields per note:
 
 1. The line's subtitle text.
 2. The filename of line's audio file, wrapped in an Anki audio tag.
