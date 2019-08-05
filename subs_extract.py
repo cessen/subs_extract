@@ -125,8 +125,8 @@ def parse_vtt_file(path, padding=0):
 
 
 if __name__ == "__main__":
-    subs_filename = sys.argv[1]
-    video_filename = sys.argv[2]
+    video_filename = sys.argv[1]
+    subs_filename = sys.argv[2]
     dir_name = video_filename.rsplit(".")[0]
     base_name = os.path.basename(dir_name)
 
@@ -146,7 +146,13 @@ if __name__ == "__main__":
     except Exception as e:
         raise e
 
+    # Set up deck file
+    deck_out_filepath = os.path.join(dir_name, "0_deck -- {}.txt".format(base_name))
+    if not os.path.isfile(deck_out_filepath):
+        deck_file = open(deck_out_filepath, 'w')
+
     # Process the subtitles
+    first_card = True
     for item in subtitles:
         print("\n\n========================================================")
         print("Extracting \"{}\"".format(item[2]))
@@ -198,5 +204,16 @@ if __name__ == "__main__":
 
             # Remove the temp wav file.
             os.remove(audio_out_filepath_1)
+
+            # Add card to deck file as well.
+            if not first_card:
+                deck_file.write("\n")
+            first_card = False
+            deck_file.write(item[2].replace("\t", "    ").replace("\r\n", "</br>").replace("\n", "</br>") + "\t")
+            deck_file.write("[sound:{}]".format(os.path.basename(audio_out_filepath_2)) + "\t")
+            deck_file.write(base_name + "\t")
+            deck_file.write("{}".format(item[0].rsplit(".")[0]))
+
+    deck_file.close()
 
     print("\n\nDone extracting subtitles!")
