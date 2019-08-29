@@ -8,12 +8,13 @@ It takes as input a video file and a corresponding .ssa, .ass, .vtt, or .srt sub
 subs_extract.py a_really_cool_show.mp4 a_really_cool_show.srt
 ```
 
-And it then creates a text file and mp3 file for each sentence in the subtitles, putting them in a new directory named after the video file.  It also creates a deck file that can be imported into Anki, with the following fields per note:
+And it then creates a text file, an mp3 file, and an image thumbnail for each sentence in the subtitles, putting them in a new directory named after the video file.  It also creates a deck file that can be imported into Anki, with the following fields per note:
 
 1. The line's subtitle text.
-2. The filename of line's audio file, wrapped in an Anki audio tag.
-3. The name of the video file the line came from, without the file extension (this basically identifies the movie/episode, assuming your video files are named appropriately).
-4. A timestamp, indicating where in the video file the line is.
+2. The filename of the line's audio file, wrapped in an Anki audio tag.
+3. The filename of the line's image thumbnail.
+4. The name of the video file the line came from, without the file extension (this basically identifies the movie/episode, assuming your video files are named appropriately).
+5. A timestamp, indicating where in the video file the line is.
 
 
 ## Using a second subtitle file
@@ -31,5 +32,6 @@ The generated deck file will also include the second subtitle like so:
 1. The line's subtitle text.
 2. The filename of line's audio file, wrapped in an Anki audio tag.
 3. **Matching subtitle from second subtitle file.**
-4. The name of the video file the line came from, without the file extension (this basically identifies the movie/episode, assuming your video files are named appropriately).
-5. A timestamp, indicating where in the video file the line is.
+4. The filename of the line's image thumbnail.
+5. The name of the video file the line came from, without the file extension (this basically identifies the movie/episode, assuming your video files are named appropriately).
+6. A timestamp, indicating where in the video file the line is.

@@ -250,6 +250,28 @@ if __name__ == "__main__":
             # Remove the temp wav file.
             os.remove(audio_out_filepath_1)
 
+            # Extract video frame
+            image_out_filepath = base_filename + ".jpg"
+            image_timecode = milliseconds_to_timecode(
+                timecode_to_milliseconds(item[0])
+                + (timecode_to_milliseconds(item[1]) // 2 )
+            )
+            subprocess.Popen([
+                "ffmpeg",
+                "-ss",
+                image_timecode,
+                "-i",
+                video_filename,
+                "-vf",
+                "scale='min(480,iw)':'min(240,ih)':force_original_aspect_ratio=decrease",
+                "-frames:v",
+                "1",
+                "-q:v",
+                "6",
+                "-y",
+                image_out_filepath,
+            ]).wait()
+
             # Add card to deck file as well.
             if not first_card:
                 deck_file.write("\n")
@@ -258,6 +280,7 @@ if __name__ == "__main__":
             deck_file.write("[sound:{}]".format(os.path.basename(audio_out_filepath_2)) + "\t")
             if second_subs:
                 deck_file.write(alt_sub.replace("\t", "    ").replace("\r\n", "</br>").replace("\n", "</br>") + "\t")
+            deck_file.write('"<img src=""{}"">"'.format(os.path.basename(image_out_filepath)) + "\t")
             deck_file.write(base_name + "\t")
             deck_file.write("{}".format(item[0].rsplit(".")[0]))
 
