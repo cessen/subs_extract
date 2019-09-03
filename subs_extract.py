@@ -213,13 +213,8 @@ if __name__ == "__main__":
                     f.write("\n\n" + alt_sub)
 
         # Extract audio of subtitle into mp3 file
-        audio_out_filepath_1 = base_filename + ".wav"
-        audio_out_filepath_2 = base_filename + ".mp3"
-        if (not os.path.isfile(audio_out_filepath_1)) and (not os.path.isfile(audio_out_filepath_2)):
-            # Extract just the subtitle audio segment into a temporary wave
-            # file.  We do this as a first step so that when we apply the
-            # normalization filter it doesn't operate on the seek area around
-            # the audio we want, which is slower.
+        audio_out_filepath = base_filename + ".mp3"
+        if not os.path.isfile(audio_out_filepath):
             subprocess.Popen([
                 "ffmpeg",
                 "-n",
@@ -228,30 +223,19 @@ if __name__ == "__main__":
                 item[0],
                 "-i",
                 video_filename,
+                "-aq", "8",
                 "-t",
                 item[1],
                 "-ar",
                 "44100",
                 "-ac",
                 "1",
-                audio_out_filepath_1,
+                audio_out_filepath,
             ]).wait()
 
-            # Normalize volume levels and write to mp3 file.
-            subprocess.Popen([
-                "ffmpeg",
-                "-n",
-                "-i", audio_out_filepath_1,
-                "-aq", "8",
-                "-af", "loudnorm",  # Normalize audio according to EBU R128
-                audio_out_filepath_2,
-            ]).wait()
-
-            # Remove the temp wav file.
-            os.remove(audio_out_filepath_1)
-
-            # Extract video frame
-            image_out_filepath = base_filename + ".jpg"
+        # Extract video frame of subtitle into jpg file
+        image_out_filepath = base_filename + ".jpg"
+        if not os.path.isfile(image_out_filepath):
             image_timecode = milliseconds_to_timecode(
                 timecode_to_milliseconds(item[0])
                 + (timecode_to_milliseconds(item[1]) // 2 )
@@ -272,17 +256,17 @@ if __name__ == "__main__":
                 image_out_filepath,
             ]).wait()
 
-            # Add card to deck file as well.
-            if not first_card:
-                deck_file.write("\n")
-            first_card = False
-            deck_file.write(item[2].replace("\t", "    ").replace("\r\n", "</br>").replace("\n", "</br>") + "\t")
-            deck_file.write("[sound:{}]".format(os.path.basename(audio_out_filepath_2)) + "\t")
-            if second_subs:
-                deck_file.write(alt_sub.replace("\t", "    ").replace("\r\n", "</br>").replace("\n", "</br>") + "\t")
-            deck_file.write('"<img src=""{}"">"'.format(os.path.basename(image_out_filepath)) + "\t")
-            deck_file.write(base_name + "\t")
-            deck_file.write("{}".format(item[0].rsplit(".")[0]))
+        # Add card to deck file
+        if not first_card:
+            deck_file.write("\n")
+        first_card = False
+        deck_file.write(item[2].replace("\t", "    ").replace("\r\n", "</br>").replace("\n", "</br>") + "\t")
+        deck_file.write("[sound:{}]".format(os.path.basename(audio_out_filepath)) + "\t")
+        if second_subs:
+            deck_file.write(alt_sub.replace("\t", "    ").replace("\r\n", "</br>").replace("\n", "</br>") + "\t")
+        deck_file.write('"<img src=""{}"">"'.format(os.path.basename(image_out_filepath)) + "\t")
+        deck_file.write(base_name + "\t")
+        deck_file.write("{}".format(item[0].rsplit(".")[0]))
 
     deck_file.close()
 
