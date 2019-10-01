@@ -12,9 +12,10 @@ And it then creates a text file, an mp3 file, and an image thumbnail for each se
 
 1. The line's subtitle text.
 2. The filename of the line's audio file, wrapped in an Anki audio tag.
-3. The filename of the line's image thumbnail.
-4. The name of the video file the line came from, without the file extension (this basically identifies the movie/episode, assuming your video files are named appropriately).
-5. A timestamp, indicating where in the video file the line is.
+3. A blank field (unless a second subtitle file was provided--see the next section of this readme).
+4. The filename of the line's image thumbnail.
+5. The name of the video file the line came from, without the file extension (this basically identifies the movie/episode, assuming your video files are named appropriately).
+6. A timestamp, indicating where in the video file the line is.
 
 
 ## Using a second subtitle file

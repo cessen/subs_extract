@@ -264,6 +264,8 @@ if __name__ == "__main__":
         deck_file.write("[sound:{}]".format(os.path.basename(audio_out_filepath)) + "\t")
         if second_subs:
             deck_file.write(alt_sub.replace("\t", "    ").replace("\r\n", "</br>").replace("\n", "</br>") + "\t")
+        else:
+            deck_file.write("\t")
         deck_file.write('"<img src=""{}"">"'.format(os.path.basename(image_out_filepath)) + "\t")
         deck_file.write(base_name + "\t")
         deck_file.write("{}".format(item[0].rsplit(".")[0]))
